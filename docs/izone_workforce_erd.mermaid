@@ -1,0 +1,144 @@
+erDiagram
+    employees {
+        int employee_id PK
+        string email UK
+        string password_hash
+        string first_name
+        string last_name
+        string phone
+        date date_of_birth
+        date joining_date
+        string designation
+        int department_id FK
+        int manager_id FK
+        enum role
+        string profile_picture_url
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    departments {
+        int department_id PK
+        string department_name UK
+        text description
+        int head_of_department FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    attendance {
+        int attendance_id PK
+        int employee_id FK
+        date attendance_date
+        time clock_in_time
+        time clock_out_time
+        decimal hours_worked
+        enum status
+        string location
+        text notes
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    leave_types {
+        int leave_type_id PK
+        string type_name UK
+        text description
+        int max_days_per_year
+        boolean requires_approval
+        boolean is_paid
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    leave_balance {
+        int balance_id PK
+        int employee_id FK
+        int leave_type_id FK
+        int year
+        decimal total_allocated
+        decimal used_days
+        decimal remaining_days
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    leave_applications {
+        int leave_application_id PK
+        int employee_id FK
+        int leave_type_id FK
+        date start_date
+        date end_date
+        decimal total_days
+        text reason
+        enum status
+        int approved_by FK
+        timestamp applied_on
+        timestamp approved_rejected_on
+        text rejection_reason
+        text attachments
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    rave_categories {
+        int category_id PK
+        string category_name UK
+        text description
+        string icon
+        string color
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    raves {
+        int rave_id PK
+        int from_employee_id FK
+        int to_employee_id FK
+        int category_id FK
+        text message
+        boolean is_anonymous
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    holidays {
+        int holiday_id PK
+        string holiday_name
+        date holiday_date UK
+        text description
+        boolean is_optional
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    notifications {
+        int notification_id PK
+        int employee_id FK
+        string title
+        text message
+        enum type
+        boolean is_read
+        string link
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% Relationships
+    employees ||--o{ departments : "belongs_to"
+    employees ||--o{ employees : "manages"
+    departments ||--o{ employees : "headed_by"
+    
+    employees ||--o{ attendance : "has"
+    employees ||--o{ leave_balance : "has"
+    employees ||--o{ leave_applications : "submits"
+    employees ||--o{ leave_applications : "approves"
+    employees ||--o{ raves : "sends"
+    employees ||--o{ raves : "receives"
+    employees ||--o{ notifications : "receives"
+    
+    leave_types ||--o{ leave_balance : "has"
+    leave_types ||--o{ leave_applications : "for"
+    
+    rave_categories ||--o{ raves : "categorizes"

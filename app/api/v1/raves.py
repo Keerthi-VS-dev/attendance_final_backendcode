@@ -150,7 +150,9 @@ def send_rave(
         "created_at": db_rave.created_at,
         "sender_name": None if rave.is_anonymous else current_user.full_name,
         "recipient_name": recipient.full_name,
-        "category_name": category.category_name if category else None
+        "category_name": category.category_name if category else None,
+        "sender_designation": None if rave.is_anonymous else current_user.designation,
+        "recipient_designation": recipient.designation
     }
 
 
@@ -203,7 +205,9 @@ def get_raves(
             "created_at": rave.created_at,
             "sender_name": sender_name,
             "recipient_name": recipient.full_name if recipient else None,
-            "category_name": category.category_name if category else None
+            "category_name": category.category_name if category else None,
+            "sender_designation": sender.designation if sender and not rave.is_anonymous else None,
+            "recipient_designation": recipient.designation if recipient else None
         }
         results.append(rave_dict)
     
@@ -242,7 +246,9 @@ def get_received_raves(
             "created_at": rave.created_at,
             "sender_name": sender_name,
             "recipient_name": current_user.full_name,
-            "category_name": category.category_name if category else None
+            "category_name": category.category_name if category else None,
+            "sender_designation": sender.designation if sender and not rave.is_anonymous else None,
+            "recipient_designation": current_user.designation
         }
         results.append(rave_dict)
     
@@ -279,7 +285,9 @@ def get_sent_raves(
             "created_at": rave.created_at,
             "sender_name": current_user.full_name,
             "recipient_name": recipient.full_name if recipient else None,
-            "category_name": category.category_name if category else None
+            "category_name": category.category_name if category else None,
+            "sender_designation": current_user.designation,
+            "recipient_designation": recipient.designation if recipient else None
         }
         results.append(rave_dict)
     
@@ -327,7 +335,9 @@ def get_employee_raves(
             "created_at": rave.created_at,
             "sender_name": sender_name,
             "recipient_name": employee.full_name,
-            "category_name": category.category_name if category else None
+            "category_name": category.category_name if category else None,
+            "sender_designation": sender.designation if sender and not rave.is_anonymous else None,
+            "recipient_designation": employee.designation
         }
         results.append(rave_dict)
     
@@ -371,7 +381,9 @@ def get_rave(
         "created_at": rave.created_at,
         "sender_name": sender_name,
         "recipient_name": recipient.full_name if recipient else None,
-        "category_name": category.category_name if category else None
+        "category_name": category.category_name if category else None,
+        "sender_designation": sender.designation if sender and not rave.is_anonymous else None,
+        "recipient_designation": recipient.designation if recipient else None
     }
     
     return rave_dict

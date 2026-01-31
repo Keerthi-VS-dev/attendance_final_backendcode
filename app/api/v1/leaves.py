@@ -193,10 +193,47 @@ def get_my_leave_applications(
     return results
 
 
+@router.get("/applications/all", response_model=List[LeaveApplicationResponse])
+def get_all_leave_applications(
+    status_filter: Optional[LeaveStatus] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: Employee = Depends(get_current_manager_or_admin),
+    db: Session = Depends(get_db)
+):
+    """Get all leave applications (Admin/Manager only)"""
+    # Both Admin and Manager can see all applications
+    query = db.query(LeaveApplication)
+    
+    if status_filter:
+        query = query.filter(LeaveApplication.status == status_filter)
+    
+    applications = query.order_by(LeaveApplication.applied_on.desc()).offset(skip).limit(limit).all()
+    
+    # Enrich with names
+    results = []
+    for app in applications:
+        employee = db.query(Employee).filter(Employee.employee_id == app.employee_id).first()
+        leave_type = db.query(LeaveType).filter(LeaveType.leave_type_id == app.leave_type_id).first()
+        approver = None
+        if app.approved_by:
+            approver = db.query(Employee).filter(Employee.employee_id == app.approved_by).first()
+        
+        app_dict = {
+            **app.__dict__,
+            "employee_name": employee.full_name if employee else None,
+            "leave_type_name": leave_type.type_name if leave_type else None,
+            "approver_name": approver.full_name if approver else None
+        }
+        results.append(app_dict)
+    
+    return results
+
+
 @router.get("/applications/pending", response_model=List[LeaveApplicationResponse])
 def get_pending_leave_applications(
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(100, ge=1, le=1000),
     current_user: Employee = Depends(get_current_manager_or_admin),
     db: Session = Depends(get_db)
 ):

@@ -48,6 +48,8 @@ class RaveResponse(RaveBase):
     sender_name: Optional[str] = None
     recipient_name: Optional[str] = None
     category_name: Optional[str] = None
+    sender_designation: Optional[str] = None
+    recipient_designation: Optional[str] = None
 
     class Config:
         from_attributes = True

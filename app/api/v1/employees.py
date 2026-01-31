@@ -21,7 +21,7 @@ router = APIRouter()
 @router.get("/", response_model=List[EmployeeResponse])
 def get_employees(
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(100, ge=1, le=1000),  # Increased default and max limit
     department_id: Optional[int] = None,
     is_active: Optional[bool] = None,
     search: Optional[str] = None,
@@ -29,7 +29,9 @@ def get_employees(
     db: Session = Depends(get_db)
 ):
     """Get list of all employees with optional filters"""
-    query = db.query(Employee)
+    from sqlalchemy.orm import joinedload
+    
+    query = db.query(Employee).options(joinedload(Employee.department))
     
     # Apply filters
     if department_id:

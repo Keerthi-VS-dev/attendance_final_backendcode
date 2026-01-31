@@ -167,16 +167,63 @@ def clock_out(
     return response_dict
 
 
+
 @router.get("/my-attendance", response_model=List[AttendanceResponse])
 def get_my_attendance(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(30, ge=1, le=100),
+    team_data: bool = Query(False),
     current_user: Employee = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Get current user's attendance records"""
+    """Get current user's attendance records, or all team data if team_data=true and user is admin/manager"""
+    
+    # If team_data is requested, check if user is admin/manager and return all data
+    if team_data:
+        from app.models.employee import UserRole
+        
+        # Check if user has admin/manager privileges using enum comparison
+        if current_user.role in (UserRole.ADMIN, UserRole.MANAGER):
+            # Return all employees' attendance data
+            query = db.query(Attendance)
+            
+            if start_date:
+                query = query.filter(Attendance.attendance_date >= start_date)
+            if end_date:
+                query = query.filter(Attendance.attendance_date <= end_date)
+            
+            attendance_records = query.order_by(Attendance.attendance_date.desc()).offset(skip).limit(limit).all()
+            
+            # Add employee names for all records
+            results = []
+            for record in attendance_records:
+                employee = db.query(Employee).filter(Employee.employee_id == record.employee_id).first()
+                record_dict = {
+                    "attendance_id": record.attendance_id,
+                    "employee_id": record.employee_id,
+                    "attendance_date": str(record.attendance_date),
+                    "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
+                    "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
+                    "status": str(record.status),
+                    "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
+                    "location": record.location,
+                    "employee_name": employee.full_name if employee else "Unknown",
+                    "employee": {
+                        "employee_id": employee.employee_id,
+                        "full_name": employee.full_name,
+                        "first_name": employee.first_name,
+                        "last_name": employee.last_name,
+                        "designation": employee.designation,
+                        "department": employee.department.department_name if employee and employee.department else None
+                    } if employee else None
+                }
+                results.append(record_dict)
+            
+            return results
+    
+    # Default behavior - return current user's attendance
     query = db.query(Attendance).filter(Attendance.employee_id == current_user.employee_id)
     
     if start_date:
@@ -191,7 +238,14 @@ def get_my_attendance(
     results = []
     for record in attendance_records:
         record_dict = {
-            **record.__dict__,
+            "attendance_id": record.attendance_id,
+            "employee_id": record.employee_id,
+            "attendance_date": str(record.attendance_date),
+            "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
+            "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
+            "status": str(record.status),
+            "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
+            "location": record.location,
             "employee_name": current_user.full_name
         }
         results.append(record_dict)
@@ -399,3 +453,92 @@ def get_monthly_statistics(
         "on_leave_days": on_leave_days,
         "total_hours_worked": round(total_hours, 2)
     }
+
+@router.get("/team-attendance", response_model=List[AttendanceResponse])
+def get_team_attendance(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    current_user: Employee = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get team attendance records (Admin/Manager only) - dedicated endpoint"""
+    from app.models.employee import UserRole
+    
+    print(f"DEBUG: Team attendance endpoint called by user {current_user.employee_id}")
+    print(f"DEBUG: User role: {current_user.role}")
+    print(f"DEBUG: Is admin: {current_user.role == UserRole.ADMIN}")
+    print(f"DEBUG: Is manager: {current_user.role == UserRole.MANAGER}")
+    
+    # Check if user has admin/manager privileges
+    if current_user.role not in (UserRole.ADMIN, UserRole.MANAGER):
+        print("DEBUG: User is not admin/manager - returning only their data")
+        # Return only current user's data for employees
+        query = db.query(Attendance).filter(Attendance.employee_id == current_user.employee_id)
+        
+        if start_date:
+            query = query.filter(Attendance.attendance_date >= start_date)
+        if end_date:
+            query = query.filter(Attendance.attendance_date <= end_date)
+        
+        attendance_records = query.order_by(Attendance.attendance_date.desc()).offset(skip).limit(limit).all()
+        
+        results = []
+        for record in attendance_records:
+            record_dict = {
+                "attendance_id": record.attendance_id,
+                "employee_id": record.employee_id,
+                "attendance_date": str(record.attendance_date),
+                "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
+                "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
+                "status": str(record.status),
+                "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
+                "location": record.location,
+                "employee_name": current_user.full_name
+            }
+            results.append(record_dict)
+        
+        return results
+    
+    print("DEBUG: User is admin/manager - returning ALL attendance data")
+    # For admin/manager - return ALL attendance data
+    query = db.query(Attendance)
+    
+    if start_date:
+        query = query.filter(Attendance.attendance_date >= start_date)
+    if end_date:
+        query = query.filter(Attendance.attendance_date <= end_date)
+    
+    attendance_records = query.order_by(Attendance.attendance_date.desc()).offset(skip).limit(limit).all()
+    print(f"DEBUG: Found {len(attendance_records)} total attendance records")
+    
+    results = []
+    for record in attendance_records:
+        employee = db.query(Employee).filter(Employee.employee_id == record.employee_id).first()
+        record_dict = {
+            "attendance_id": record.attendance_id,
+            "employee_id": record.employee_id,
+            "attendance_date": str(record.attendance_date),
+            "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
+            "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
+            "status": str(record.status),
+            "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
+            "location": record.location,
+            "employee_name": employee.full_name if employee else "Unknown",
+            "employee": {
+                "employee_id": employee.employee_id,
+                "full_name": employee.full_name,
+                "first_name": employee.first_name,
+                "last_name": employee.last_name,
+                "designation": employee.designation,
+                "department": employee.department.department_name if employee and employee.department else None
+            } if employee else None
+        }
+        results.append(record_dict)
+    
+    print(f"DEBUG: Returning {len(results)} formatted records")
+    unique_employees = set(record['employee_name'] for record in results)
+    print(f"DEBUG: Unique employees in results: {list(unique_employees)}")
+    
+    return results

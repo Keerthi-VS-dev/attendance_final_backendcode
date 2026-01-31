@@ -1,7 +1,10 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from datetime import date, datetime
 from app.models.employee import UserRole
+
+if TYPE_CHECKING:
+    pass
 
 
 # Base Schema
@@ -53,7 +56,20 @@ class EmployeeResponse(EmployeeBase):
     profile_picture_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    
+    # Include department relationship
+    department: Optional['DepartmentResponse'] = None
 
+    class Config:
+        from_attributes = True
+
+
+# Department Response Schema (for relationship)
+class DepartmentResponse(BaseModel):
+    department_id: int
+    department_name: str
+    description: Optional[str] = None
+    
     class Config:
         from_attributes = True
 
@@ -98,3 +114,6 @@ class ChangePassword(BaseModel):
         if len(v) < 6:
             raise ValueError('Password must be at least 6 characters long')
         return v
+
+# Update forward references
+EmployeeResponse.model_rebuild()

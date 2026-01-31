@@ -168,7 +168,7 @@ def clock_out(
 
 
 
-@router.get("/my-attendance", response_model=List[AttendanceResponse])
+@router.get("/my-attendance")
 def get_my_attendance(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
@@ -203,10 +203,10 @@ def get_my_attendance(
                 record_dict = {
                     "attendance_id": record.attendance_id,
                     "employee_id": record.employee_id,
-                    "attendance_date": str(record.attendance_date),
-                    "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
-                    "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
-                    "status": str(record.status),
+                    "attendance_date": record.attendance_date.isoformat(),
+                    "clock_in_time": record.clock_in_time.isoformat() if record.clock_in_time else None,
+                    "clock_out_time": record.clock_out_time.isoformat() if record.clock_out_time else None,
+                    "status": record.status.value,
                     "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
                     "location": record.location,
                     "employee_name": employee.full_name if employee else "Unknown",
@@ -234,16 +234,16 @@ def get_my_attendance(
     
     attendance_records = query.order_by(Attendance.attendance_date.desc()).offset(skip).limit(limit).all()
     
-    # Add employee name
+    # Add employee name and return properly formatted data
     results = []
     for record in attendance_records:
         record_dict = {
             "attendance_id": record.attendance_id,
             "employee_id": record.employee_id,
-            "attendance_date": str(record.attendance_date),
-            "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
-            "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
-            "status": str(record.status),
+            "attendance_date": record.attendance_date.isoformat(),
+            "clock_in_time": record.clock_in_time.isoformat() if record.clock_in_time else None,
+            "clock_out_time": record.clock_out_time.isoformat() if record.clock_out_time else None,
+            "status": record.status.value,
             "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
             "location": record.location,
             "employee_name": current_user.full_name
@@ -454,7 +454,7 @@ def get_monthly_statistics(
         "total_hours_worked": round(total_hours, 2)
     }
 
-@router.get("/team-attendance", response_model=List[AttendanceResponse])
+@router.get("/team-attendance")
 def get_team_attendance(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
@@ -489,10 +489,10 @@ def get_team_attendance(
             record_dict = {
                 "attendance_id": record.attendance_id,
                 "employee_id": record.employee_id,
-                "attendance_date": str(record.attendance_date),
-                "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
-                "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
-                "status": str(record.status),
+                "attendance_date": record.attendance_date.isoformat(),
+                "clock_in_time": record.clock_in_time.isoformat() if record.clock_in_time else None,
+                "clock_out_time": record.clock_out_time.isoformat() if record.clock_out_time else None,
+                "status": record.status.value,
                 "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
                 "location": record.location,
                 "employee_name": current_user.full_name
@@ -519,10 +519,10 @@ def get_team_attendance(
         record_dict = {
             "attendance_id": record.attendance_id,
             "employee_id": record.employee_id,
-            "attendance_date": str(record.attendance_date),
-            "clock_in_time": str(record.clock_in_time) if record.clock_in_time else None,
-            "clock_out_time": str(record.clock_out_time) if record.clock_out_time else None,
-            "status": str(record.status),
+            "attendance_date": record.attendance_date.isoformat(),
+            "clock_in_time": record.clock_in_time.isoformat() if record.clock_in_time else None,
+            "clock_out_time": record.clock_out_time.isoformat() if record.clock_out_time else None,
+            "status": record.status.value,
             "hours_worked": float(record.hours_worked) if record.hours_worked else 0.0,
             "location": record.location,
             "employee_name": employee.full_name if employee else "Unknown",

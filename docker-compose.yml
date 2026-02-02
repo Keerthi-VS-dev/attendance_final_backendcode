@@ -1,0 +1,29 @@
+﻿version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-your_database_name}
+      POSTGRES_USER: ${POSTGRES_USER:-your_db_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your_secure_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-your_db_user}:${POSTGRES_PASSWORD:-your_secure_password}@db:5432/${POSTGRES_DB:-your_database_name}
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-key-minimum-32-characters}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
+volumes:
+  postgres_data:

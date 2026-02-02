@@ -35,6 +35,13 @@ envir/
 .env.test.local
 .env.production.local
 
+# Docker Environment Files
+.env.prod
+.env.staging
+
+# Docker Compose Override Files
+docker-compose.override.yml
+
 # IDE
 .vscode/
 .idea/
